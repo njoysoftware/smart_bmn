@@ -166,3 +166,41 @@ export async function deleteBarang(id: string) {
 
   revalidatePath("/barang");
 }
+
+/**
+ * BULK UPDATE STATUS
+ */
+export async function bulkUpdateStatus(ids: string[], status: string) {
+  await requireAuth();
+  try {
+    await prisma.barang.updateMany({
+      where: {
+        id: { in: ids.map((id) => BigInt(id)) },
+      },
+      data: { status_bmn: status as StatusBMN },
+    });
+    revalidatePath("/barang");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: "Gagal memperbarui status masal" };
+  }
+}
+
+/**
+ * BULK UPDATE KONDISI
+ */
+export async function bulkUpdateKondisi(ids: string[], kondisi: string) {
+  await requireAuth();
+  try {
+    await prisma.barang.updateMany({
+      where: {
+        id: { in: ids.map((id) => BigInt(id)) },
+      },
+      data: { kondisi: kondisi as Kondisi },
+    });
+    revalidatePath("/barang");
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: "Gagal memperbarui kondisi masal" };
+  }
+}
