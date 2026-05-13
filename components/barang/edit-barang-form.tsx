@@ -35,11 +35,20 @@ export default function EditBarangForm({
   action,
   barang,
 }: EditBarangFormProps) {
-  const router = useRouter();
-
   // Normalize status_bmn dari Prisma ('Tidak_Aktif') ke display value ('Tidak Aktif')
-  const statusBMN =
-    barang.status_bmn === "Tidak_Aktif" ? "Tidak Aktif" : barang.status_bmn;
+  const statusMap: Record<string, string> = {
+    Aktif: "Aktif",
+    Tidak_Aktif: "Tidak Aktif",
+  };
+  const kondisiMap: Record<string, string> = {
+    baik: "Baik",
+    Rusak_Ringan: "Rusak Ringan",
+    Rusak_Berat: "Rusak Berat",
+    Dihapus: "Dihapus",
+  };
+
+  const displayStatus = statusMap[barang.status_bmn] || barang.status_bmn;
+  const displayKondisi = kondisiMap[barang.kondisi] || barang.kondisi;
 
   return (
     <form action={action} className="space-y-5">
@@ -97,7 +106,7 @@ export default function EditBarangForm({
 
       <div className="grid gap-1.5">
         <Label htmlFor="status_bmn">Status BMN</Label>
-        <Select name="status_bmn" defaultValue={statusBMN}>
+        <Select name="status_bmn" defaultValue={displayStatus}>
           <SelectTrigger id="status_bmn" className="w-full">
             <SelectValue placeholder="Pilih Status BMN" />
           </SelectTrigger>
@@ -113,7 +122,7 @@ export default function EditBarangForm({
 
       <div className="grid gap-1.5">
         <Label htmlFor="kondisi">Kondisi</Label>
-        <Select name="kondisi" defaultValue={barang.kondisi}>
+        <Select name="kondisi" defaultValue={displayKondisi}>
           <SelectTrigger id="kondisi" className="w-full">
             <SelectValue placeholder="Pilih Kondisi" />
           </SelectTrigger>
@@ -121,8 +130,8 @@ export default function EditBarangForm({
             <SelectGroup>
               <SelectLabel>Kondisi</SelectLabel>
               <SelectItem value="Baik">Baik</SelectItem>
-              <SelectItem value="Rusak Ringan">Rusak Ringan</SelectItem>
-              <SelectItem value="Rusak Berat">Rusak Berat</SelectItem>
+              <SelectItem value="Rusak_Ringan">Rusak Ringan</SelectItem>
+              <SelectItem value="Rusak_Berat">Rusak Berat</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
