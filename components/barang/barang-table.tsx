@@ -133,7 +133,15 @@ function SortHeader({
 
 export default function BarangTable({ items }: { items: BarangRow[] }) {
   const router = useRouter();
+
+  // State data utama
   const [data, setData] = React.useState(() => items);
+
+  // Sync state data saat props 'items' dari server berubah (router.refresh)
+  React.useEffect(() => {
+    setData(items);
+  }, [items]);
+
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -307,26 +315,56 @@ export default function BarangTable({ items }: { items: BarangRow[] }) {
   }
 
   function handleBulkStatus(newStatus: string) {
+    if (selectedIds.length === 0) return;
+
     startTransition(async () => {
+      // Optimistic Update: Langsung ubah di UI
+      setData((prev) =>
+        prev.map((item) =>
+          selectedIds.includes(item.id.toString())
+            ? { ...item, status_bmn: newStatus }
+            : item,
+        ),
+      );
+
       const res = await bulkUpdateStatus(selectedIds, newStatus);
       if (res.success) {
         toast.success(`Berhasil mengubah ${selectedIds.length} status`);
-        setRowSelection({}); // Reset checkbox
-        router.refresh();
+        setRowSelection({});
+        router.refresh(); // Sinkronisasi ulang dengan Server
+      } else {
+        // Rollback jika gagal
+        setData(items);
+        toast.error("Gagal memperbarui status");
       }
     });
   }
 
   function handleBulkKondisi(newKondisi: string) {
+    if (selectedIds.length === 0) return;
+
     startTransition(async () => {
+      // Optimistic Update
+      setData((prev) =>
+        prev.map((item) =>
+          selectedIds.includes(item.id.toString())
+            ? { ...item, kondisi: newKondisi }
+            : item,
+        ),
+      );
+
       const res = await bulkUpdateKondisi(selectedIds, newKondisi);
       if (res.success) {
         toast.success(`Berhasil mengubah ${selectedIds.length} kondisi`);
-        setRowSelection({}); // Reset checkbox
+        setRowSelection({});
         router.refresh();
+      } else {
+        setData(items);
+        toast.error("Gagal memperbarui kondisi");
       }
     });
   }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Toolbar */}
@@ -341,9 +379,8 @@ export default function BarangTable({ items }: { items: BarangRow[] }) {
         <div className="flex items-center gap-2">
           {selectedIds.length > 0 && (
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-              {/* Dropdown Update Status Masal */}
               <Select onValueChange={handleBulkStatus} disabled={isPending}>
-                <SelectTrigger className=" bg-amber-100 text-sm font-bold text-amber-700 uppercase">
+                <SelectTrigger className="bg-amber-100 text-sm font-bold text-amber-700 uppercase">
                   <SelectValue placeholder="Update Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -352,9 +389,8 @@ export default function BarangTable({ items }: { items: BarangRow[] }) {
                 </SelectContent>
               </Select>
 
-              {/* Dropdown Update Kondisi Masal */}
               <Select onValueChange={handleBulkKondisi} disabled={isPending}>
-                <SelectTrigger className=" bg-emerald-100 text-sm font-bold text-emerald-700 uppercase">
+                <SelectTrigger className="bg-emerald-100 text-sm font-bold text-emerald-700 uppercase">
                   <SelectValue placeholder="Update Kondisi" />
                 </SelectTrigger>
                 <SelectContent>
@@ -364,7 +400,6 @@ export default function BarangTable({ items }: { items: BarangRow[] }) {
                 </SelectContent>
               </Select>
 
-              {/* Tombol Hapus Masal Tetap Ada */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -457,6 +492,7 @@ export default function BarangTable({ items }: { items: BarangRow[] }) {
                         )}
                   </TableHead>
                 ))}
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             ))}
           </TableHeader>
@@ -475,7 +511,6 @@ export default function BarangTable({ items }: { items: BarangRow[] }) {
                       )}
                     </TableCell>
                   ))}
-                  {/* Delete per baris via actions col sudah ada, tambah juga shortcut di sini */}
                   <TableCell>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
